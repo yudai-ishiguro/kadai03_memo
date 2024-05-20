@@ -50,10 +50,6 @@
 
   <ul id="list">
     <!-- ここに追加データが挿入される -->
-    <li>
-      <p id="translatedTitle"></p>
-      <p id="translatedText"></p>
-    </li>
   </ul>
 
   <footer>
@@ -77,6 +73,9 @@
     });
 
    $("#translateButton").on("click", function(){
+    //  リストをクリア
+    $("#list").empty();
+
     // 保存されたデータの数を取得
     let counter = parseInt(localStorage.getItem("counter")) || 0;
 
@@ -89,9 +88,11 @@
     const savedText = localStorage.getItem("savedText_" + index);
 
     if(savedTitle){
-      translateText(savedTitle, "#translatedTitle_" + index, function(){
+      translateText(savedTitle, function(translatedTitle){
         if(savedText){
-          translateText(savedText, "#translatedText_" + index, function(){
+          translateText(savedText, function(translatedText){
+            const listItem = `<li><p>${translatedTitle}</p><p>${translatedText}</p></li>`;
+            $("#list").append(listItem);
             translateNext(index + 1, maxIndex);
         });
       } else{
@@ -106,7 +107,7 @@
     }
    };
 
-   function translateText(text, targetElement, callback){
+   function translateText(text, callback){
     const url = 'https://script.google.com/macros/s/AKfycbwcXXRPF_kxFb5Jpp6mLeDVDbVZeIRLSpJVKs7k2k61X119D_yJ97hYJAAXHVLlnKd6kw/exec';
     const params = {
       text: text,
@@ -123,15 +124,9 @@
         if (response.error){
           alert("翻訳に失敗しました: " + response.error);
         } else {
-          // 新しい要素を作成し、翻訳結果を追加する
-          const translatedResult = $("<li><p>" + response.text + "</p></li>");
-          // $(targetElement).append(translatedResult);
-          $("#list").append(translatedResult);
-
-
           if(typeof callback === "function"){
-            callback();
-        }
+            callback(response.text);
+          }
       }
     },
       error: function(jqXHR, textStatus, errorThrown){

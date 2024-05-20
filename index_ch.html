@@ -62,127 +62,126 @@
   <!-- 以下にjsを書いていきます -->
   <script>
 
-   $("#save").on("click", function () {
-     const title = $("#title").val();
-     const text = $("#text").val();
-
-    // カウンターを取得し、次のインデックスを計算
-    let counter = parseInt(localStorage.getItem("counter")) || 0;
-    counter++;
-     
-     localStorage.setItem("savedTitle_" + counter, title);
-     localStorage.setItem("savedText_" + counter, text);
-     localStorage.setItem("counter", counter);
-     alert("タイトルとテキストが保存されました")
+    $("#save").on("click", function () {
+      const title = $("#title").val();
+      const text = $("#text").val();
+ 
+     // カウンターを取得し、次のインデックスを計算
+     let counter = parseInt(localStorage.getItem("counter")) || 0;
+     counter++;
+      
+      localStorage.setItem("savedTitle_" + counter, title);
+      localStorage.setItem("savedText_" + counter, text);
+      localStorage.setItem("counter", counter);
+      alert("タイトルとテキストが保存されました")
+     });
+ 
+    $("#translateButton").on("click", function(){
+     //  リストをクリア
+     $("#list").empty();
+ 
+     // 保存されたデータの数を取得
+     let counter = parseInt(localStorage.getItem("counter")) || 0;
+ 
+     translateNext(1, counter);
     });
-
-   $("#translateButton").on("click", function(){
-    // 保存されたデータの数を取得
-    let counter = parseInt(localStorage.getItem("counter")) || 0;
-
-    translateNext(1, counter);
-   });
-
-   function translateNext(index, maxIndex) {
-    if(index <= maxIndex){
-    const savedTitle = localStorage.getItem("savedTitle_" + index);
-    const savedText = localStorage.getItem("savedText_" + index);
-
-    if(savedTitle){
-      translateText(savedTitle, "#translatedTitle_" + index, function(){
-        if(savedText){
-          translateText(savedText, "#translatedText_" + index, function(){
-            translateNext(index + 1, maxIndex);
-        });
-      } else{
-        alert("保存されたタイトルがありません")
-        translateNext(index + 1, maxIndex);
-      }
-    });
-  } else{
-      alert("保存されたテキストがありません");
-      translateNext(index + 1, maxIndex);
-      }
-    }
-   };
-
-   function translateText(text, targetElement, callback){
-    const url = 'https://script.google.com/macros/s/AKfycbwcXXRPF_kxFb5Jpp6mLeDVDbVZeIRLSpJVKs7k2k61X119D_yJ97hYJAAXHVLlnKd6kw/exec';
-    const params = {
-      text: text,
-      source: "ja",
-      target: "zh"
+ 
+    function translateNext(index, maxIndex) {
+     if(index <= maxIndex){
+     const savedTitle = localStorage.getItem("savedTitle_" + index);
+     const savedText = localStorage.getItem("savedText_" + index);
+ 
+     if(savedTitle){
+       translateText(savedTitle, function(translatedTitle){
+         if(savedText){
+           translateText(savedText, function(translatedText){
+             const listItem = `<li><p>${translatedTitle}</p><p>${translatedText}</p></li>`;
+             $("#list").append(listItem);
+             translateNext(index + 1, maxIndex);
+         });
+       } else{
+         alert("保存されたタイトルがありません")
+         translateNext(index + 1, maxIndex);
+       }
+     });
+   } else{
+       alert("保存されたテキストがありません");
+       translateNext(index + 1, maxIndex);
+       }
+     }
     };
-
-    $.ajax({
-      url: url, 
-      data: params,
-      dataType: "json",
-      success: function(response, textStatus, jqXHR){
-        console.log("AJAX request succeeded", response);
-        if (response.error){
-          alert("翻訳に失敗しました: " + response.error);
-        } else {
-          // 新しい要素を作成し、翻訳結果を追加する
-          const translatedResult = $("<li><p>" + response.text + "</p></li>");
-          // $(targetElement).append(translatedResult);
-          $("#list").append(translatedResult);
-
-
-          if(typeof callback === "function"){
-            callback();
-        }
-      }
-    },
-      error: function(jqXHR, textStatus, errorThrown){
-        console.log("AJAX request failed:", textStatus, errorThrown);
-        alert("翻訳に失敗しました:" + textStatus + " - " + errorThrown);
-      }
-    });
-  }
-
-    //1.Save クリックイベント
-
-    // $("#save").on("click", function () {
-    //   const key = $("#title").val();
-    //   const value = $("#text").val();
-
-    //   localStorage.setItem(key, value);
-    //   const html = `
-    //   <li>
-    //     <p>${key}</p>
-    //     <p>${value}</p>
-    //   </li>
-    // `;
-    //   $("#list").append(html);
-    // });
-
-
-
-    //2.clear クリックイベント
-
-    $("#clear").on("click", function () {
-      localStorage.clear();
-      $("#title").val("");
-      $("#text").val("");
-      $("#list").empty();
-    });
-
-
-    //3.ページ読み込み：保存データ取得表示
-
-    // for (let i = 0; i < localStorage.length; i++) {
-    //   const key = localStorage.key(i);
-    //   const value = localStorage.getItem(key);
-    //   const html = `
-    //   <li>
-    //     <p>${value}</p>
-    //   </li>
-    // `;
-    //   $("#list").append(html);
-    // }
-
-  </script>
-</body>
-
-</html>
+ 
+    function translateText(text, callback){
+     const url = 'https://script.google.com/macros/s/AKfycbwcXXRPF_kxFb5Jpp6mLeDVDbVZeIRLSpJVKs7k2k61X119D_yJ97hYJAAXHVLlnKd6kw/exec';
+     const params = {
+       text: text,
+       source: "ja",
+       target: "zh"
+     };
+ 
+     $.ajax({
+       url: url, 
+       data: params,
+       dataType: "json",
+       success: function(response, textStatus, jqXHR){
+         console.log("AJAX request succeeded", response);
+         if (response.error){
+           alert("翻訳に失敗しました: " + response.error);
+         } else {
+           if(typeof callback === "function"){
+             callback(response.text);
+           }
+       }
+     },
+       error: function(jqXHR, textStatus, errorThrown){
+         console.log("AJAX request failed:", textStatus, errorThrown);
+         alert("翻訳に失敗しました:" + textStatus + " - " + errorThrown);
+       }
+     });
+   }
+ 
+     //1.Save クリックイベント
+ 
+     // $("#save").on("click", function () {
+     //   const key = $("#title").val();
+     //   const value = $("#text").val();
+ 
+     //   localStorage.setItem(key, value);
+     //   const html = `
+     //   <li>
+     //     <p>${key}</p>
+     //     <p>${value}</p>
+     //   </li>
+     // `;
+     //   $("#list").append(html);
+     // });
+ 
+ 
+ 
+     //2.clear クリックイベント
+ 
+     $("#clear").on("click", function () {
+       localStorage.clear();
+       $("#title").val("");
+       $("#text").val("");
+       $("#list").empty();
+     });
+ 
+ 
+     //3.ページ読み込み：保存データ取得表示
+ 
+     // for (let i = 0; i < localStorage.length; i++) {
+     //   const key = localStorage.key(i);
+     //   const value = localStorage.getItem(key);
+     //   const html = `
+     //   <li>
+     //     <p>${value}</p>
+     //   </li>
+     // `;
+     //   $("#list").append(html);
+     // }
+ 
+   </script>
+ </body>
+ 
+ </html>
